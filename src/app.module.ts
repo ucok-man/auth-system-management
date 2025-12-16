@@ -1,12 +1,21 @@
 import { Module } from '@nestjs/common';
 
-import { CoffeesModule } from './coffees/coffees.module';
-import { PrismaService } from './prisma.service';
-import { UsersModule } from './users/users.module';
-import { IamModule } from './iam/iam.module';
+import { ConfigModule } from '@nestjs/config';
+import configuration from './configuration';
+import { CoffeesModule } from './modules/coffees/coffees.module';
+import { IamModule } from './modules/iam/iam.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
-  imports: [CoffeesModule, UsersModule, IamModule],
-  providers: [PrismaService],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [configuration],
+    }),
+    CoffeesModule,
+    UsersModule,
+    IamModule,
+  ],
+  providers: [],
 })
 export class AppModule {}
