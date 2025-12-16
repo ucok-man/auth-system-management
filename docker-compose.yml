@@ -1,0 +1,25 @@
+services:
+  asm-postgres:
+    image: postgres:17
+    container_name: asm-postgres
+    environment:
+      POSTGRES_DB: auth-service-management
+      POSTGRES_USER: auth-service-management
+      POSTGRES_PASSWORD: pa55word
+    ports:
+      - "5433:5432"
+    volumes:
+      - asm-postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U auth-service-management -d auth-service-management",
+        ]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  asm-postgres_data:
