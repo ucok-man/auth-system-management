@@ -1,7 +1,15 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtModule } from '@nestjs/jwt';
 import { DatabaseModule } from 'src/infra/databases/database.module';
-import { AuhtenticationController } from './auhtentication/auhtentication.controller';
-import { AuhtenticationService } from './auhtentication/auhtentication.service';
+import { AuthenticationController } from './authentication/auhtentication.controller';
+import { AuthenticationService } from './authentication/auhtentication.service';
+import jwtConfig from './authentication/config/jwt.config';
+import { AccessTokenGuard } from './authentication/guards/access-token.guard';
+import { AuthenticationGuard } from './authentication/guards/authentication.guard';
+import { RefreshTokenRedisStorage } from './authentication/storages/refresh-token.redis.storage';
+import { RefreshTokenStorage } from './authentication/storages/refresh-token.storage';
 import { BcryptService } from './hashing/bcrypt.service';
 import { HashingService } from './hashing/hashing.service';
 
@@ -11,9 +19,22 @@ import { HashingService } from './hashing/hashing.service';
       provide: HashingService,
       useClass: BcryptService,
     },
-    AuhtenticationService,
+    {
+      provide: RefreshTokenStorage,
+      useClass: RefreshTokenRedisStorage,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: AuthenticationGuard,
+    },
+    AccessTokenGuard,
+    AuthenticationService,
   ],
-  controllers: [AuhtenticationController],
-  imports: [DatabaseModule],
+  controllers: [AuthenticationController],
+  imports: [
+    DatabaseModule,
+    JwtModule.registerAsync(jwtConfig.asProvider()),
+    ConfigModule.forFeature(jwtConfig),
+  ],
 })
 export class IamModule {}
