@@ -20,6 +20,21 @@ services:
       timeout: 2s
       retries: 10
     restart: unless-stopped
+  asm-redis:
+    image: redis:7-alpine
+    container_name: asm-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - asm-redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+    restart: unless-stopped
 
 volumes:
+  asm-redis_data:
   asm-postgres_data:
