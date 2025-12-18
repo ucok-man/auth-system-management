@@ -23,7 +23,7 @@ export class MenusService {
 
     if (existingMenu) {
       throw new BadRequestException([
-        `Slug menu with value "${dto.slug}" already exists`,
+        `slug menu with value "${dto.slug}" already exists`,
       ]);
     }
 
@@ -35,7 +35,7 @@ export class MenusService {
 
       if (!exist) {
         throw new BadRequestException([
-          `Parent id with value "${dto.parentId}" was not found`,
+          `parentId with value "${dto.parentId}" was not found`,
         ]);
       }
     }
@@ -45,14 +45,14 @@ export class MenusService {
         const chunks = permission.split(':');
         if (chunks.length !== 2) {
           throw new BadRequestException([
-            'Each resource permission must be in format <rolecode>:<action> (lowercase)',
+            'resourcePermissions each item must be in format <rolecode>:<action> (lowercase)',
           ]);
         }
 
         const [rolecode, action] = chunks;
         if (!SAFE_PERMISSIONS_ACTIONS.includes(action as any)) {
           throw new BadRequestException([
-            'Resource permission action must be one of create|read|update|delete (lowercase)',
+            'resourcePermissions action must be one of create|read|update|delete (lowercase)',
           ]);
         }
 
@@ -64,7 +64,7 @@ export class MenusService {
 
         if (!exist) {
           throw new BadRequestException([
-            `Resource permission ${permission} is invalid on rolecode "${rolecode}"`,
+            `resourcePermissions ${permission} has invalid on rolecode "${rolecode}" not found`,
           ]);
         }
       }

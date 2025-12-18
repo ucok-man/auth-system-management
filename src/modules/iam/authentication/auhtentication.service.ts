@@ -44,7 +44,7 @@ export class AuthenticationService {
       });
 
       if (exist) {
-        throw new BadRequestException(['Email already exists']);
+        throw new BadRequestException(['email already exists']);
       }
 
       // Validate role codes
@@ -67,7 +67,9 @@ export class AuthenticationService {
 
       if (invalidRoleCodes.length > 0) {
         throw new BadRequestException(
-          invalidRoleCodes.map((code) => `Role code ${code} is not valid`),
+          invalidRoleCodes.map(
+            (code) => `roleCodes with value ${code} is not valid`,
+          ),
         );
       }
 
@@ -192,7 +194,7 @@ export class AuthenticationService {
     );
     if (!isValid) {
       throw new BadRequestException([
-        'ExchangeToken value are invalid or expired',
+        'exchangeToken value is invalid or expired',
       ]);
     }
 
@@ -201,7 +203,15 @@ export class AuthenticationService {
         id: userId,
       },
       include: {
-        roles: true,
+        roles: {
+          omit: {
+            isActive: true,
+          },
+        },
+      },
+      omit: {
+        password: true,
+        isActive: true,
       },
     });
 
@@ -220,7 +230,7 @@ export class AuthenticationService {
 
     const selectedRole = roles.find((r) => r.id === dto.roleId);
     if (!selectedRole) {
-      throw new BadRequestException(['RoleId value are invalid']);
+      throw new BadRequestException(['roleId value are not found']);
     }
 
     const { accessToken, refreshToken } = await this.generateJWTToken(
@@ -232,13 +242,9 @@ export class AuthenticationService {
       where: { userId: user.id, scope: 'SelectRole' },
     });
 
-    // Remove unnecessary field
-    const { password, isActive: isActiveUser, ...userRest } = user;
-    const { isActive: isActiveRole, ...roleRest } = selectedRole;
-
     return {
-      user: userRest,
-      role: roleRest,
+      user: user,
+      role: selectedRole,
       accessToken: accessToken,
       refreshToken: refreshToken,
       requireRoleSelection: false as const,
@@ -262,7 +268,7 @@ export class AuthenticationService {
         refreshTokenId,
       );
       if (!isRefreshTokenValid) {
-        throw new UnauthorizedException('Invalid refresh token value');
+        throw new UnauthorizedException(['refreshToken is invalid or expired']);
       } else {
         await this.refreshTokenStorage.invalidate(sub);
       }
@@ -274,7 +280,7 @@ export class AuthenticationService {
         },
       });
       if (!exist) {
-        throw new UnauthorizedException('Invalid refresh token value');
+        throw new UnauthorizedException(['refreshToken is invalid or expired']);
       }
 
       const { roles, ...user } = exist;
@@ -296,7 +302,10 @@ export class AuthenticationService {
     }
   }
 
-  private async generateJWTToken(user: User, role: Role) {
+  private async generateJWTToken(
+    user: Pick<User, 'id' | 'email'>,
+    role: Pick<Role, 'id' | 'code'>,
+  ) {
     const refreshTokenId = randomUUID();
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -326,7 +335,7 @@ export class AuthenticationService {
     return { accessToken, refreshToken };
   }
 
-  private async generateExchangeToken(ttlMs: number, user: User) {
+  private async generateExchangeToken(ttlMs: number, user: Pick<User, 'id'>) {
     const plaintext = randomBytes(32).toString('hex');
     const expiry = new Date(Date.now() + ttlMs);
     const hash = createHash('sha256').update(plaintext).digest('hex');

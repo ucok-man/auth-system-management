@@ -23,7 +23,7 @@ export class RolesService {
 
       if (exist) {
         throw new BadRequestException([
-          `Code with value '${dto.code}' already exists`,
+          `code with value '${dto.code}' already exists`,
         ]);
       }
 
@@ -50,11 +50,12 @@ export class RolesService {
       const user = await this.prismaService.user.findUnique({
         where: { id: dto.userId, isActive: true },
         include: { roles: true },
+        omit: { password: true, isActive: true },
       });
 
       if (!user) {
         throw new BadRequestException([
-          `UserId with value '${dto.userId}' not found`,
+          `userId with value '${dto.userId}' not found`,
         ]);
       }
 
@@ -65,14 +66,16 @@ export class RolesService {
 
       if (!role) {
         throw new BadRequestException([
-          `RoleId with value '${dto.roleId}' not found`,
+          `roleId with value '${dto.roleId}' not found`,
         ]);
       }
 
       // Check if user already has this role
-      const hasRole = user.roles.some((r) => r.id === dto.roleId);
+      const hasRole = user.roles.find((r) => r.code === role.code);
       if (hasRole) {
-        throw new BadRequestException('User already has this role assigned');
+        throw new BadRequestException([
+          `userId has this role ${role.id} assigned`,
+        ]);
       }
 
       // Assign role to user using the many-to-many relation
@@ -83,20 +86,11 @@ export class RolesService {
             connect: { id: dto.roleId },
           },
         },
-        include: {
-          roles: {
-            select: {
-              id: true,
-              code: true,
-            },
-          },
-        },
       });
 
       return {
-        userId: user.id,
+        userId: updatedUser.id,
         assignedRole: role,
-        allRoles: updatedUser.roles,
       };
     } catch (error) {
       if (error instanceof HttpException) {

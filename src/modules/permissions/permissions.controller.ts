@@ -12,7 +12,7 @@ import { AssignPermissionDto } from './dto/assign-permission.dto';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { PermissionsService } from './permissions.service';
 
-@Controller('permissions')
+@Controller('/permissions')
 export class PermissionsController {
   constructor(private readonly permissionsService: PermissionsService) {}
 
@@ -29,11 +29,13 @@ export class PermissionsController {
   @HttpCode(HttpStatus.OK)
   @Post('/assign')
   async assing(@Body() dto: AssignPermissionDto) {
-    const { permission } = await this.permissionsService.assignPermission(dto);
-    return { data: permission };
+    const { roleId, assignedPermission } =
+      await this.permissionsService.assignPermission(dto);
+
+    return { data: { roleId, assignedPermission } };
   }
 
-  @RoutePermission(RoutePermissionCode.RoleRead)
+  @RoutePermission(RoutePermissionCode.PermissionRead)
   @HttpCode(HttpStatus.OK)
   @Get()
   async findAll() {

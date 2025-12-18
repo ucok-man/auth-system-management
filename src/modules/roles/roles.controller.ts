@@ -12,7 +12,7 @@ import { AssignRoleDto } from './dto/assign-role.dto';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { RolesService } from './roles.service';
 
-@Controller('roles')
+@Controller('/roles')
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
@@ -28,10 +28,9 @@ export class RolesController {
   @HttpCode(HttpStatus.OK)
   @Post('/assign')
   async assignRole(@Body() dto: AssignRoleDto) {
-    const { allRoles, assignedRole, userId } =
-      await this.rolesService.assignRole(dto);
+    const { assignedRole, userId } = await this.rolesService.assignRole(dto);
 
-    return { data: { allRoles, assignedRole, userId } };
+    return { data: { assignedRole, userId } };
   }
 
   @RoutePermission(RoutePermissionCode.RoleRead)

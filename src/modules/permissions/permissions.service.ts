@@ -24,21 +24,21 @@ export class PermissionsService {
 
       if (exist) {
         throw new BadRequestException([
-          `Code with value '${dto.code}' already exists`,
+          `code with value '${dto.code}' already exists`,
         ]);
       }
 
       const chunks = dto.code.split(':');
       if (chunks.length !== 2) {
         throw new BadRequestException([
-          'Code must be in format <rolecode>:<action> (lowercase)',
+          'code must be in format <rolecode>:<action> (lowercase)',
         ]);
       }
 
       const [rolecode, action] = chunks;
       if (!SAFE_PERMISSIONS_ACTIONS.includes(action as any)) {
         throw new BadRequestException([
-          'Code action must be one of create|read|update|delete (lowercase)',
+          'code action must be one of create|read|update|delete (lowercase)',
         ]);
       }
 
@@ -50,7 +50,7 @@ export class PermissionsService {
 
       if (!roleExist) {
         throw new BadRequestException([
-          `Code ${dto.code} is invalid on rolecode "${rolecode}" not found rolecode`,
+          `code ${dto.code} has invalid rolecode "${rolecode}" not found`,
         ]);
       }
 
@@ -100,7 +100,7 @@ export class PermissionsService {
       const hasPermisssion = permission.roles.find((r) => r.code === role.code);
       if (hasPermisssion) {
         throw new BadRequestException([
-          `roleId has already this permission ${dto.permissionId} attached`,
+          `roleId has already this permission ${dto.permissionId} assigned`,
         ]);
       }
 
@@ -115,8 +115,8 @@ export class PermissionsService {
       });
 
       return {
-        permission: updatedPermission,
-        assignedToRole: role,
+        roleId: role.id,
+        assignedPermission: updatedPermission,
       };
     } catch (error) {
       if (error instanceof HttpException) {
