@@ -49,8 +49,6 @@ The system uses database schema with the following entities:
 ## Prerequisites
 
 - Node.js 18+ or higher
-- PostgreSQL 17
-- Redis 6+
 - npm or yarn package manager
 - Docker and Docker Compose
 
