@@ -1,0 +1,113 @@
+// Database Schema Diagram
+// Use this at https://dbdiagram.io
+
+Table User {
+  id String [pk, note: 'UUID']
+  isActive Boolean [default: true]
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime [note: 'Auto-updated']
+  
+  name String
+  image String [null]
+  email String [unique]
+  password String
+  
+  Note: 'User accounts with roles and verifications'
+}
+
+Table Role {
+  id String [pk, note: 'UUID']
+  isActive Boolean [default: true]
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime [note: 'Auto-updated']
+  
+  code String [unique]
+  name String
+  description String [null]
+  
+  Note: 'User roles with permissions'
+}
+
+Table Permission {
+  id String [pk, note: 'UUID']
+  isActive Boolean [default: true]
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime [note: 'Auto-updated']
+  
+  code String [unique]
+  name String
+  description String [null]
+  type PermissionType
+  
+  Note: 'Permissions assigned to roles'
+}
+
+Table Menu {
+  id String [pk, note: 'UUID']
+  isActive Boolean [default: true]
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime [note: 'Auto-updated']
+  
+  slug String [unique]
+  name String
+  icon String [null]
+  href String [null]
+  resourcePermissions String[] [note: 'Array of permission codes (not a relation)']
+  parentId String [null, ref: > Menu.id]
+  
+  Note: 'Hierarchical menu structure. NO relations to other tables except self-reference'
+}
+
+Table Verification {
+  id String [pk, note: 'UUID']
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime [note: 'Auto-updated']
+  
+  value String [unique]
+  expiredAt DateTime
+  scope VerificationScope
+  userId String [ref: > User.id]
+  
+  Note: 'User verification tokens'
+}
+
+// Junction table for User-Role many-to-many relationship
+Table UserRole {
+  userId String [ref: > User.id]
+  roleId String [ref: > Role.id]
+  
+  indexes {
+    (userId, roleId) [pk]
+  }
+  
+  Note: 'Many-to-many: Users can have multiple roles'
+}
+
+// Junction table for Role-Permission many-to-many relationship
+Table RolePermission {
+  roleId String [ref: > Role.id]
+  permissionId String [ref: > Permission.id]
+  
+  indexes {
+    (roleId, permissionId) [pk]
+  }
+  
+  Note: 'Many-to-many: Roles can have multiple permissions'
+}
+
+// Enums
+Enum PermissionType {
+  Route  // format: <resourcename>:<action>
+  Resource  // format: <rolecode>:<action>
+}
+
+Enum VerificationScope {
+  SelectRole
+}
+
+// Relationships Summary:
+// User <--> Role (many-to-many via UserRole)
+// Role <--> Permission (many-to-many via RolePermission)
+// User <-- Verification (one-to-many)
+// Menu <--> Menu (self-reference for hierarchy)
+// Menu has NO relations to User, Role, or Permission tables

@@ -1,0 +1,947 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/users": {
+      "get": {
+        "description": "Retrieve list of all users in the system. Requires \"user:read\" permission.",
+        "operationId": "UsersController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Users retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": [
+                      {
+                        "id": "123e4567-e89b-12d3-a456-426614174000",
+                        "name": "John",
+                        "email": "john@example.com",
+                        "image": "https://example.com/avatar.jpg",
+                        "password": "$2b$10$...",
+                        "isActive": true,
+                        "createdAt": "2024-01-01T00:00:00.000Z",
+                        "updatedAt": "2024-01-01T00:00:00.000Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid access token"
+          },
+          "403": {
+            "description": "Forbidden - User does not have required permission"
+          }
+        },
+        "security": [{ "JWT-auth": [] }],
+        "summary": "Get all users",
+        "tags": ["Users"]
+      }
+    },
+    "/auth/sign-up": {
+      "post": {
+        "description": "Create a new user account with specified roles. User must provide valid role codes that exist in the system.",
+        "operationId": "AuthenticationController_signup",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SignUpDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User successfully created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "user": {
+                        "id": "123e4567-e89b-12d3-a456-426614174000",
+                        "name": "John",
+                        "email": "john@example.com",
+                        "image": "https://example.com/avatar.jpg",
+                        "createdAt": "2024-01-01T00:00:00.000Z",
+                        "updatedAt": "2024-01-01T00:00:00.000Z"
+                      },
+                      "roles": [
+                        {
+                          "id": "123e4567-e89b-12d3-a456-426614174001",
+                          "code": "admin",
+                          "name": "Administrator",
+                          "description": "System administrator",
+                          "createdAt": "2024-01-01T00:00:00.000Z",
+                          "updatedAt": "2024-01-01T00:00:00.000Z"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Email exists or invalid role codes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "message": ["email already exists"],
+                    "error": "Bad Request"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Register new user",
+        "tags": ["Authentication"]
+      }
+    },
+    "/auth/sign-in": {
+      "post": {
+        "description": "\n      Authenticate user with email and password.\n      \n      **Two possible responses:**\n      1. **Single Role**: Returns access token and refresh token immediately\n      2. **Multiple Roles**: Returns exchange token for role selection\n    ",
+        "operationId": "AuthenticationController_signin",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SignInDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sign in successful - Single role user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "user": {
+                        "id": "123e4567-e89b-12d3-a456-426614174000",
+                        "name": "John",
+                        "email": "john@example.com",
+                        "image": "https://example.com/avatar.jpg",
+                        "createdAt": "2024-01-01T00:00:00.000Z",
+                        "updatedAt": "2024-01-01T00:00:00.000Z"
+                      },
+                      "role": {
+                        "id": "123e4567-e89b-12d3-a456-426614174001",
+                        "code": "admin",
+                        "name": "Administrator",
+                        "description": "System administrator",
+                        "createdAt": "2024-01-01T00:00:00.000Z",
+                        "updatedAt": "2024-01-01T00:00:00.000Z"
+                      }
+                    },
+                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "requireRoleSelection": false
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "message": "Invalid email or password",
+                    "error": "Unauthorized"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "User sign in",
+        "tags": ["Authentication"]
+      }
+    },
+    "/auth/select-role": {
+      "post": {
+        "description": "For users with multiple roles, select one role to proceed. Requires exchange token from sign-in response.",
+        "operationId": "AuthenticationController_selectRole",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SelectRoleDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Role selected successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "user": {
+                        "id": "123e4567-e89b-12d3-a456-426614174000",
+                        "name": "John",
+                        "email": "john@example.com",
+                        "image": "https://example.com/avatar.jpg",
+                        "createdAt": "2024-01-01T00:00:00.000Z",
+                        "updatedAt": "2024-01-01T00:00:00.000Z"
+                      },
+                      "role": {
+                        "id": "123e4567-e89b-12d3-a456-426614174001",
+                        "code": "admin",
+                        "name": "Administrator",
+                        "description": "System administrator",
+                        "createdAt": "2024-01-01T00:00:00.000Z",
+                        "updatedAt": "2024-01-01T00:00:00.000Z"
+                      }
+                    },
+                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "requireRoleSelection": false
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid or expired exchange token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "message": ["exchangeToken value is invalid or expired"],
+                    "error": "Bad Request"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Select role after sign in",
+        "tags": ["Authentication"]
+      }
+    },
+    "/auth/refresh-tokens": {
+      "post": {
+        "description": "Generate new access token and refresh token using valid refresh token.",
+        "operationId": "AuthenticationController_refreshToken",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RefreshTokenDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tokens refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or expired refresh token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "message": ["refreshToken is invalid or expired"],
+                    "error": "Unauthorized"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Refresh access token",
+        "tags": ["Authentication"]
+      }
+    },
+    "/menus": {
+      "post": {
+        "description": "\n      Create a new menu item. Requires \"menu:create\" permission.\n      \n      **Resource Permissions:** Array of permissions required to access this menu (format: <rolecode>:<action>)\n      - If empty, menu is accessible to all authenticated users\n      - If specified, only users with matching resource permissions can see this menu\n    ",
+        "operationId": "MenusController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateMenuDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Menu created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "id": "123e4567-e89b-12d3-a456-426614174003",
+                      "slug": "dashboard",
+                      "name": "Dashboard",
+                      "icon": "dashboard-icon",
+                      "href": "https://example.com/dashboard",
+                      "parentId": null,
+                      "createdAt": "2024-01-01T00:00:00.000Z",
+                      "updatedAt": "2024-01-01T00:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid data or slug already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "message": [
+                      "slug menu with value \"dashboard\" already exists"
+                    ],
+                    "error": "Bad Request"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid access token"
+          },
+          "403": {
+            "description": "Forbidden - User does not have required permission"
+          }
+        },
+        "security": [{ "JWT-auth": [] }],
+        "summary": "Create new menu",
+        "tags": ["Menus"]
+      }
+    },
+    "/menus/my-menus": {
+      "get": {
+        "description": "\n      Retrieve menus accessible to the current user based on their resource permissions.\n      Requires \"menu:read\" permission.\n      \n      **Returns:**\n      - Menus with no resource permissions (public menus)\n      - Menus where user has matching resource permissions\n    ",
+        "operationId": "MenusController_myMenus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Menus retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": [
+                      {
+                        "id": "123e4567-e89b-12d3-a456-426614174003",
+                        "slug": "dashboard",
+                        "name": "Dashboard",
+                        "icon": "dashboard-icon",
+                        "href": "https://example.com/dashboard",
+                        "parentId": null,
+                        "createdAt": "2024-01-01T00:00:00.000Z",
+                        "updatedAt": "2024-01-01T00:00:00.000Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid access token"
+          },
+          "403": {
+            "description": "Forbidden - User does not have required permission"
+          }
+        },
+        "security": [{ "JWT-auth": [] }],
+        "summary": "Get user menus",
+        "tags": ["Menus"]
+      }
+    },
+    "/roles": {
+      "post": {
+        "description": "Create a new role in the system. Requires \"role:create\" permission.",
+        "operationId": "RolesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateRoleDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Role created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "id": "123e4567-e89b-12d3-a456-426614174001",
+                      "code": "admin",
+                      "name": "Administrator",
+                      "description": "System administrator",
+                      "createdAt": "2024-01-01T00:00:00.000Z",
+                      "updatedAt": "2024-01-01T00:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Role code already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "message": ["code with value 'admin' already exists"],
+                    "error": "Bad Request"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid access token"
+          },
+          "403": {
+            "description": "Forbidden - User does not have required permission"
+          }
+        },
+        "security": [{ "JWT-auth": [] }],
+        "summary": "Create new role",
+        "tags": ["Roles"]
+      },
+      "get": {
+        "description": "Retrieve list of all roles in the system. Requires \"role:read\" permission.",
+        "operationId": "RolesController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Roles retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": [
+                      {
+                        "id": "123e4567-e89b-12d3-a456-426614174001",
+                        "code": "admin",
+                        "name": "Administrator",
+                        "description": "System administrator",
+                        "isActive": true,
+                        "createdAt": "2024-01-01T00:00:00.000Z",
+                        "updatedAt": "2024-01-01T00:00:00.000Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid access token"
+          },
+          "403": {
+            "description": "Forbidden - User does not have required permission"
+          }
+        },
+        "security": [{ "JWT-auth": [] }],
+        "summary": "Get all roles",
+        "tags": ["Roles"]
+      }
+    },
+    "/roles/assign": {
+      "post": {
+        "description": "Assign an existing role to a user. Requires \"role:edit\" permission.",
+        "operationId": "RolesController_assignRole",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AssignRoleDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Role assigned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "userId": "123e4567-e89b-12d3-a456-426614174000",
+                      "assignedRole": {
+                        "id": "123e4567-e89b-12d3-a456-426614174001",
+                        "code": "admin"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - User or role not found, or role already assigned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "message": [
+                      "userId has this role 123e4567-e89b-12d3-a456-426614174001 assigned"
+                    ],
+                    "error": "Bad Request"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid access token"
+          },
+          "403": {
+            "description": "Forbidden - User does not have required permission"
+          }
+        },
+        "security": [{ "JWT-auth": [] }],
+        "summary": "Assign role to user",
+        "tags": ["Roles"]
+      }
+    },
+    "/permissions": {
+      "post": {
+        "description": "\n      Create a new resource permission in the system. Requires \"permission:create\" permission.\n      \n      **Permission Code Format:** `<rolecode>:<action>`\n      - Actions: create, read, update, delete\n      - Example: user:read, admin:create\n    ",
+        "operationId": "PermissionsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreatePermissionDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Permission created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "id": "123e4567-e89b-12d3-a456-426614174002",
+                      "code": "user:read",
+                      "name": "Read Users",
+                      "description": "Allows viewing user data",
+                      "type": "Resource",
+                      "createdAt": "2024-01-01T00:00:00.000Z",
+                      "updatedAt": "2024-01-01T00:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid format or permission already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "message": ["code with value 'user:read' already exists"],
+                    "error": "Bad Request"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid access token"
+          },
+          "403": {
+            "description": "Forbidden - User does not have required permission"
+          }
+        },
+        "security": [{ "JWT-auth": [] }],
+        "summary": "Create new permission",
+        "tags": ["Permissions"]
+      },
+      "get": {
+        "description": "Retrieve list of all permissions in the system. Requires \"permission:read\" permission.",
+        "operationId": "PermissionsController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Permissions retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": [
+                      {
+                        "id": "123e4567-e89b-12d3-a456-426614174002",
+                        "code": "user:read",
+                        "name": "Read Users",
+                        "description": "Allows viewing user data",
+                        "type": "Resource",
+                        "isActive": true,
+                        "createdAt": "2024-01-01T00:00:00.000Z",
+                        "updatedAt": "2024-01-01T00:00:00.000Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid access token"
+          },
+          "403": {
+            "description": "Forbidden - User does not have required permission"
+          }
+        },
+        "security": [{ "JWT-auth": [] }],
+        "summary": "Get all permissions",
+        "tags": ["Permissions"]
+      }
+    },
+    "/permissions/assign": {
+      "post": {
+        "description": "Assign an existing permission to a role. Requires \"permission:edit\" permission.",
+        "operationId": "PermissionsController_assing",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AssignPermissionDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Permission assigned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "roleId": "123e4567-e89b-12d3-a456-426614174001",
+                      "assignedPermission": {
+                        "id": "123e4567-e89b-12d3-a456-426614174002",
+                        "code": "user:read"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Role or permission not found, or already assigned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "message": [
+                      "roleId has already this permission 123e4567-e89b-12d3-a456-426614174002 assigned"
+                    ],
+                    "error": "Bad Request"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid access token"
+          },
+          "403": {
+            "description": "Forbidden - User does not have required permission"
+          }
+        },
+        "security": [{ "JWT-auth": [] }],
+        "summary": "Assign permission to role",
+        "tags": ["Permissions"]
+      }
+    }
+  },
+  "info": {
+    "title": "Auth System Management API Documentation",
+    "description": "\n      Comprehensive Auth system management API with role-based and claim-base access control (CBAC | RBAC).\n      \n      ## Features\n      - User authentication with JWT tokens\n      - Multi-role user support with role selection\n      - Permission-based authorization (Route & Resource permissions)\n      - Dynamic menu system based on user permissions\n      - Refresh token mechanism\n      \n      ## Authentication Flow\n      1. Sign up with role codes\n      2. Sign in (if has multiple roles, select role first before access resources)\n      3. Use access token in Bearer header\n      4. Refresh tokens when expired\n      \n      ## Permission Types\n      - **Route Permissions**: Control access to API endpoints\n      - **Resource Permissions**: Control access to per data resources (eg, resources on menus)\n    ",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "User authentication and authorization endpoints"
+    },
+    { "name": "Users", "description": "User management endpoints" },
+    {
+      "name": "Roles",
+      "description": "Role management and assignment endpoints"
+    },
+    {
+      "name": "Permissions",
+      "description": "Permission management and assignment endpoints"
+    },
+    {
+      "name": "Menus",
+      "description": "Menu management and user menu retrieval"
+    }
+  ],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "JWT-auth": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "name": "JWT",
+        "description": "Enter JWT token",
+        "in": "header"
+      }
+    },
+    "schemas": {
+      "SignUpDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "User full name (letters only, 2-255 characters)",
+            "example": "John",
+            "minLength": 2,
+            "maxLength": 255
+          },
+          "email": {
+            "type": "string",
+            "description": "User email address",
+            "example": "john@example.com"
+          },
+          "password": {
+            "type": "string",
+            "description": "Password (8-32 chars, must contain uppercase, lowercase, and number/special character)",
+            "example": "Password123!",
+            "minLength": 8,
+            "maxLength": 32
+          },
+          "image": {
+            "type": "string",
+            "description": "User profile image URL",
+            "example": "https://example.com/avatar.jpg"
+          },
+          "roleCodes": {
+            "description": "Array of role codes (lowercase) to assign to user",
+            "example": ["admin", "user"],
+            "items": { "type": "array" },
+            "type": "array"
+          }
+        },
+        "required": ["name", "email", "password", "roleCodes"]
+      },
+      "SignInDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "User email address",
+            "example": "john@example.com"
+          },
+          "password": {
+            "type": "string",
+            "description": "User password",
+            "example": "Password123!",
+            "minLength": 8,
+            "maxLength": 32
+          }
+        },
+        "required": ["email", "password"]
+      },
+      "SelectRoleDto": {
+        "type": "object",
+        "properties": {
+          "roleId": {
+            "type": "string",
+            "description": "UUID of the role to select",
+            "example": "123e4567-e89b-12d3-a456-426614174001",
+            "format": "uuid"
+          },
+          "exchangeToken": {
+            "type": "string",
+            "description": "Exchange token received from sign-in response (for users with multiple roles)",
+            "example": "a1b2c3d4e5f6g7h8i9j0..."
+          }
+        },
+        "required": ["roleId", "exchangeToken"]
+      },
+      "RefreshTokenDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "Valid refresh token",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          }
+        },
+        "required": ["refreshToken"]
+      },
+      "CreateMenuDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "Unique menu slug",
+            "example": "dashboard"
+          },
+          "name": {
+            "type": "string",
+            "description": "Menu display name",
+            "example": "Dashboard"
+          },
+          "icon": {
+            "type": "string",
+            "description": "Menu icon name or class",
+            "example": "dashboard-icon"
+          },
+          "href": {
+            "type": "string",
+            "description": "Menu navigation URL",
+            "example": "https://example.com/dashboard"
+          },
+          "resourcePermissions": {
+            "description": "Array of resource permissions required to access this menu (format: <rolecode>:<action>)",
+            "example": ["user:read", "admin:create"],
+            "items": { "type": "array" },
+            "type": "array"
+          },
+          "parentId": {
+            "type": "string",
+            "description": "UUID of parent menu (for nested menus)",
+            "example": "123e4567-e89b-12d3-a456-426614174003",
+            "format": "uuid"
+          }
+        },
+        "required": ["slug", "name"]
+      },
+      "CreateRoleDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Unique role code (lowercase letters only)",
+            "example": "admin"
+          },
+          "name": {
+            "type": "string",
+            "description": "Role display name",
+            "example": "Administrator"
+          },
+          "description": {
+            "type": "string",
+            "description": "Role description (max 255 characters)",
+            "example": "System administrator with full access",
+            "maxLength": 255
+          }
+        },
+        "required": ["code", "name"]
+      },
+      "AssignRoleDto": {
+        "type": "object",
+        "properties": {
+          "roleId": {
+            "type": "string",
+            "description": "UUID of the role to assign",
+            "example": "123e4567-e89b-12d3-a456-426614174001",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "description": "UUID of the user to assign role to",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "format": "uuid"
+          }
+        },
+        "required": ["roleId", "userId"]
+      },
+      "CreatePermissionDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Permission code in format <rolecode>:<action> (lowercase). Actions: create, read, update, delete",
+            "example": "user:read",
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_.-]+$"
+          },
+          "name": {
+            "type": "string",
+            "description": "Permission display name",
+            "example": "Read Users"
+          },
+          "description": {
+            "type": "string",
+            "description": "Permission description (max 255 characters)",
+            "example": "Allows viewing user data",
+            "maxLength": 255
+          }
+        },
+        "required": ["code", "name"]
+      },
+      "AssignPermissionDto": {
+        "type": "object",
+        "properties": {
+          "permissionId": {
+            "type": "string",
+            "description": "UUID of the permission to assign",
+            "example": "123e4567-e89b-12d3-a456-426614174002",
+            "format": "uuid"
+          },
+          "roleId": {
+            "type": "string",
+            "description": "UUID of the role to assign permission to",
+            "example": "123e4567-e89b-12d3-a456-426614174001",
+            "format": "uuid"
+          }
+        },
+        "required": ["permissionId", "roleId"]
+      }
+    }
+  }
+}
