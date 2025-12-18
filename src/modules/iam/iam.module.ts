@@ -25,11 +25,11 @@ import { HashingService } from './hashing/hashing.service';
       useClass: RefreshTokenRedisStorage,
     },
     {
-      provide: APP_GUARD,
+      provide: APP_GUARD, // GLOBAL
       useClass: AuthenticationGuard,
     },
     {
-      provide: APP_GUARD,
+      provide: APP_GUARD, // GLOBAL
       useClass: RoutePermissionGuard,
     },
     AccessTokenGuard,

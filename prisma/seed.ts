@@ -161,15 +161,21 @@ async function SEED_USER(roles: Role[]) {
     },
     {
       name: 'manager',
-      email: 'manager1@example.com',
+      email: 'manager@example.com',
       password: '$2a$12$h1vn9D.28.XfqT500niKqeWBgm9NneNelf0uK7NkPAutfHoVOb2iu', // @Password123
       roles: [manager],
     },
     {
       name: 'staff',
-      email: 'staff1@example.com',
+      email: 'staff@example.com',
       password: '$2a$12$h1vn9D.28.XfqT500niKqeWBgm9NneNelf0uK7NkPAutfHoVOb2iu', // @Password123
       roles: [staff],
+    },
+    {
+      name: 'auditor',
+      email: 'auditor@example.com',
+      password: '$2a$12$h1vn9D.28.XfqT500niKqeWBgm9NneNelf0uK7NkPAutfHoVOb2iu', // @Password123
+      roles: [auditor],
     },
     {
       name: 'multirole',
