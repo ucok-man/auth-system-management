@@ -8,7 +8,13 @@ import {
 import type { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import { REQUEST_USER_KEY } from 'src/modules/iam/iam.constant';
+import { Permission } from 'src/generated/prisma/client';
+import { PrismaService } from 'src/infra/databases/prisma.service';
+import {
+  REQUEST_PERMISSION_KEY,
+  REQUEST_USER_KEY,
+} from 'src/modules/iam/iam.constant';
+import { ActiveUserPayload } from '../../interfaces/active-user-payload.interface';
 import jwtConfig from '../config/jwt.config';
 
 @Injectable()
@@ -17,6 +23,7 @@ export class AccessTokenGuard implements CanActivate {
     private readonly jwtService: JwtService,
     @Inject(jwtConfig.KEY)
     private readonly jwtCfg: ConfigType<typeof jwtConfig>,
+    private readonly prismaService: PrismaService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -27,7 +34,38 @@ export class AccessTokenGuard implements CanActivate {
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync(token, this.jwtCfg);
+      const payload: ActiveUserPayload = await this.jwtService.verifyAsync(
+        token,
+        this.jwtCfg,
+      );
+
+      const permissions = await this.prismaService.permission.findMany({
+        where: {
+          roles: {
+            some: {
+              id: payload.role.id,
+            },
+          },
+        },
+        select: {
+          id: true,
+          code: true,
+          type: true,
+        },
+      });
+
+      const groupedPermissions = permissions.reduce(
+        (acc, permission) => {
+          acc[permission.type.toLowerCase() + 's'].push(permission);
+          return acc;
+        },
+        {
+          routes: [] as Pick<Permission, 'id' | 'code' | 'type'>[],
+          resources: [] as Pick<Permission, 'id' | 'code' | 'type'>[],
+        },
+      );
+
+      request[REQUEST_PERMISSION_KEY] = groupedPermissions;
       request[REQUEST_USER_KEY] = payload;
     } catch (error) {
       throw new UnauthorizedException('Invalid or missing access token');

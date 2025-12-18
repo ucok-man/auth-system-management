@@ -10,6 +10,7 @@ import { AccessTokenGuard } from './authentication/guards/access-token.guard';
 import { AuthenticationGuard } from './authentication/guards/authentication.guard';
 import { RefreshTokenRedisStorage } from './authentication/storages/refresh-token.redis.storage';
 import { RefreshTokenStorage } from './authentication/storages/refresh-token.storage';
+import { RoutePermissionGuard } from './authorization/guards/route-permission.guard';
 import { BcryptService } from './hashing/bcrypt.service';
 import { HashingService } from './hashing/hashing.service';
 
@@ -26,6 +27,10 @@ import { HashingService } from './hashing/hashing.service';
     {
       provide: APP_GUARD,
       useClass: AuthenticationGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RoutePermissionGuard,
     },
     AccessTokenGuard,
     AuthenticationService,

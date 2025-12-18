@@ -13,7 +13,7 @@ import { createHash, randomBytes, randomUUID } from 'crypto';
 import { Role, User } from 'src/generated/prisma/client';
 import { PrismaService } from 'src/infra/databases/prisma.service';
 import { HashingService } from '../hashing/hashing.service';
-import { ActiveUserPayload } from '../interfaces/active-user.interface';
+import { ActiveUserPayload } from '../interfaces/active-user-payload.interface';
 import { RefreshTokenPayload } from '../interfaces/refresh-token-payload';
 import jwtConfig from './config/jwt.config';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -191,7 +191,9 @@ export class AuthenticationService {
       dto.exchangeToken,
     );
     if (!isValid) {
-      throw new BadRequestException(['Exchange token is not valid value']);
+      throw new BadRequestException([
+        'ExchangeToken value are invalid or expired',
+      ]);
     }
 
     const exist = await this.prisma.user.findUnique({
@@ -218,7 +220,7 @@ export class AuthenticationService {
 
     const selectedRole = roles.find((r) => r.id === dto.roleId);
     if (!selectedRole) {
-      throw new BadRequestException(['Invalid role id value are provided']);
+      throw new BadRequestException(['RoleId value are invalid']);
     }
 
     const { accessToken, refreshToken } = await this.generateJWTToken(
