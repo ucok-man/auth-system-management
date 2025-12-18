@@ -194,14 +194,24 @@ Once the application is running, visit:
 ### Single Role User
 
 ```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+
     Client->>API: POST /auth/sign-in
+    Client->>API: POST/auth/refresh-tokens
 ```
 
 ### Multi-Role User
 
 ```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+
     Client->>API: POST /auth/sign-in
     Client->>API: POST /auth/select-role
+    Client->>API: POST/auth/refresh-tokens
 ```
 
 ## Permission System
