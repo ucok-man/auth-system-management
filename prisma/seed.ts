@@ -82,7 +82,7 @@ async function SEED_PERMISSION(roles: Role[]) {
     })),
   );
   for (const permission of routePermissions) {
-    if (permission.code.endsWith('read')) {
+    if (permission.code.endsWith('read') && permission.code !== 'user:read') {
       await prisma.permission.create({
         data: {
           code: permission.code,

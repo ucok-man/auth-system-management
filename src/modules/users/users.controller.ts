@@ -9,7 +9,8 @@ export class UsersController {
 
   @RoutePermission(RoutePermissionCode.UserRead)
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  async findAll() {
+    const { users } = await this.usersService.findAll();
+    return { data: users };
   }
 }
