@@ -1,8 +1,8 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PrismaService } from 'src/infra/databases/prisma.service';
@@ -38,7 +38,7 @@ export class RoutePermissionGuard implements CanActivate {
     );
 
     if (!canAccess) {
-      throw new UnauthorizedException(
+      throw new ForbiddenException(
         'You are not allowed to access this resources',
       );
     }
