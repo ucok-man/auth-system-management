@@ -20,9 +20,10 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:up": "docker compose up -d asm-postgres asm-redis",
     "db:clear": "docker compose down -v asm-postgres asm-redis",
-    "prisma:dev": "prisma migrate dev",
-    "prisma:reset": "prisma migrate reset",
-    "prisma:generate": "prisma generate"
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:migrate:reset": "prisma migrate reset",
+    "prisma:generate": "prisma generate",
+    "prisma:seed": "prisma db seed"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -67,6 +68,7 @@
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
   },

@@ -9,7 +9,16 @@
 * 🟢 You can import this file directly.
 */
 
+export const PermissionType = {
+  Route: 'Route',
+  Resource: 'Resource'
+} as const
+
+export type PermissionType = (typeof PermissionType)[keyof typeof PermissionType]
 
 
-// This file is empty because there are no enums in the schema.
-export {}
+export const VerificationScope = {
+  SelectRole: 'SelectRole'
+} as const
+
+export type VerificationScope = (typeof VerificationScope)[keyof typeof VerificationScope]

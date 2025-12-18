@@ -16,11 +16,83 @@ datasource db {
 
 model User {
   id        String   @id @default(uuid())
-  name      String
-  image     String?  @unique
-  email     String   @unique
-  password  String
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  name     String
+  image    String?
+  email    String  @unique
+  password String
+
+  roles         Role[]         @relation("userOwningRoles")
+  verifications Verification[]
+}
+
+model Role {
+  id        String   @id @default(uuid())
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  code        String  @unique
+  name        String
+  description String?
+
+  users       User[]       @relation("userOwningRoles")
+  permissions Permission[] @relation("roleOwnPermissions")
+}
+
+enum PermissionType {
+  Route // for route permission the format is <resoucename>:<action> 
+  Resource // for resource permission the format is <rolecode>:<action>
+}
+
+model Permission {
+  id        String   @id @default(uuid())
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  code        String         @unique
+  name        String
+  description String?
+  type        PermissionType
+
+  roles Role[] @relation("roleOwnPermissions")
+}
+
+model Menu {
+  id        String   @id @default(uuid())
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  slug String  @unique
+  name String
+  icon String?
+  href String?
+
+  resourcePermissions String[]
+
+  parent   Menu?   @relation("MenuHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  parentId String?
+  children Menu[]  @relation("MenuHierarchy")
+}
+
+enum VerificationScope {
+  SelectRole
+}
+
+model Verification {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  value     String            @unique
+  expiredAt DateTime
+  scope     VerificationScope
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 }

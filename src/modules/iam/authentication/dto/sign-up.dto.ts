@@ -1,5 +1,7 @@
 import {
+  IsArray,
   IsEmail,
+  IsLowercase,
   IsOptional,
   IsString,
   IsUrl,
@@ -31,4 +33,9 @@ export class SignUpDto {
   @IsString({ message: 'Image must be a string' })
   @IsUrl({}, { message: 'Image must be valid url' })
   image?: string;
+
+  @IsArray({ message: 'Role codes must be an array' })
+  @IsString({ each: true, message: 'Each role code must be a string' })
+  @IsLowercase({ each: true, message: 'Each role code must be lowercase' })
+  roleCodes: string[];
 }

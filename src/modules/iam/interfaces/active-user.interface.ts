@@ -1,4 +1,11 @@
 export interface ActiveUserPayload {
   sub: string; // user id
-  email: string;
+  user: {
+    id: string;
+    email: string;
+  };
+  role: {
+    id: string;
+    code: string;
+  };
 }

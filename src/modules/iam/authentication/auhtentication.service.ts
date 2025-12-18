@@ -9,14 +9,15 @@ import {
 } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { randomUUID } from 'crypto';
-import { User } from 'src/generated/prisma/client';
+import { createHash, randomBytes, randomUUID } from 'crypto';
+import { Role, User } from 'src/generated/prisma/client';
 import { PrismaService } from 'src/infra/databases/prisma.service';
 import { HashingService } from '../hashing/hashing.service';
 import { ActiveUserPayload } from '../interfaces/active-user.interface';
 import { RefreshTokenPayload } from '../interfaces/refresh-token-payload';
 import jwtConfig from './config/jwt.config';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { SelectRoleDto } from './dto/select-role.dto';
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 import { RefreshTokenStorage } from './storages/refresh-token.storage';
@@ -46,16 +47,58 @@ export class AuthenticationService {
         throw new BadRequestException(['Email already exists']);
       }
 
-      const hash = await this.hashingService.hash(dto.password);
-      const { password, isActive, ...user } = await this.prisma.user.create({
-        data: {
-          name: dto.name,
-          email: dto.email,
-          password: hash,
-          image: dto.image,
+      // Validate role codes
+      const rolecodes = await this.prisma.role.findMany({
+        where: {
+          code: {
+            in: dto.roleCodes,
+          },
+          isActive: true,
+        },
+        select: {
+          code: true,
         },
       });
-      return { user };
+
+      const validRoleCodes = rolecodes.map((r) => r.code);
+      const invalidRoleCodes = dto.roleCodes.filter(
+        (code) => !validRoleCodes.includes(code),
+      );
+
+      if (invalidRoleCodes.length > 0) {
+        throw new BadRequestException(
+          invalidRoleCodes.map((code) => `Role code ${code} is not valid`),
+        );
+      }
+
+      const hash = await this.hashingService.hash(dto.password);
+
+      // Remove unnecessary field
+      const { password, isActive, roles, ...userRest } =
+        await this.prisma.user.create({
+          data: {
+            name: dto.name,
+            email: dto.email,
+            password: hash,
+            image: dto.image,
+            roles: {
+              connect: validRoleCodes.map((c) => ({ code: c })),
+            },
+          },
+          include: {
+            roles: true,
+          },
+        });
+
+      const roleRest = roles.map((role) => {
+        const { isActive, ...roleRest } = role;
+        return roleRest;
+      });
+
+      return {
+        user: userRest,
+        roles: roleRest,
+      };
     } catch (error: any) {
       if (error instanceof HttpException) {
         throw error;
@@ -67,14 +110,23 @@ export class AuthenticationService {
 
   async signin(dto: SignInDto) {
     try {
-      const user = await this.prisma.user.findUnique({
+      const exist = await this.prisma.user.findUnique({
         where: {
           email: dto.email,
         },
+        include: {
+          roles: true,
+        },
       });
 
-      if (!user) {
+      if (!exist) {
         throw new UnauthorizedException('Invalid email or password');
+      }
+
+      const { roles, ...user } = exist;
+      if (!roles.length) {
+        this.logger.error(`Signup user found but has no role included`);
+        throw new InternalServerErrorException();
       }
 
       const isEqual = await this.hashingService.compare(
@@ -85,7 +137,46 @@ export class AuthenticationService {
         throw new UnauthorizedException('Invalid email or password');
       }
 
-      return await this.generateToken(user);
+      if (roles.length > 1) {
+        const oneHour = 60 * 60 * 1000;
+        const { token, expiredAt } = await this.generateExchangeToken(
+          oneHour,
+          user,
+        );
+
+        // Remove unnecessary field
+        const { password, isActive, ...userRest } = user;
+        const roleRest = roles.map((role) => {
+          const { isActive, ...roleRest } = role;
+          return roleRest;
+        });
+
+        return {
+          user: userRest,
+          availableRoles: roleRest,
+          exchangeToken: token,
+          exchangeTokenTTl: expiredAt,
+          requireRoleSelection: true,
+        } as const;
+      }
+
+      const selectedRole = roles[0];
+      const { accessToken, refreshToken } = await this.generateJWTToken(
+        user,
+        selectedRole,
+      );
+
+      // Remove unnecessary field
+      const { password, isActive: isActiveUser, ...userRest } = user;
+      const { isActive: isActiveRole, ...roleRest } = selectedRole;
+
+      return {
+        user: userRest,
+        role: roleRest,
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        requireRoleSelection: false,
+      } as const;
     } catch (error: any) {
       if (error instanceof HttpException) {
         throw error;
@@ -93,6 +184,63 @@ export class AuthenticationService {
       this.logger.error(`Failed to signup: ${error}`, error?.stack);
       throw new InternalServerErrorException();
     }
+  }
+
+  async selectRole(dto: SelectRoleDto) {
+    const { isValid, userId } = await this.verifyExchangeToken(
+      dto.exchangeToken,
+    );
+    if (!isValid) {
+      throw new BadRequestException(['Exchange token is not valid value']);
+    }
+
+    const exist = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      include: {
+        roles: true,
+      },
+    });
+
+    if (!exist) {
+      this.logger.error(
+        `Select role token exhange are valid but user not found`,
+      );
+      throw new InternalServerErrorException();
+    }
+
+    const { roles, ...user } = exist;
+    if (!roles.length) {
+      this.logger.error(`Select role user found but has no role included`);
+      throw new InternalServerErrorException();
+    }
+
+    const selectedRole = roles.find((r) => r.id === dto.roleId);
+    if (!selectedRole) {
+      throw new BadRequestException(['Invalid role id value are provided']);
+    }
+
+    const { accessToken, refreshToken } = await this.generateJWTToken(
+      user,
+      selectedRole,
+    );
+
+    await this.prisma.verification.deleteMany({
+      where: { userId: user.id, scope: 'SelectRole' },
+    });
+
+    // Remove unnecessary field
+    const { password, isActive: isActiveUser, ...userRest } = user;
+    const { isActive: isActiveRole, ...roleRest } = selectedRole;
+
+    return {
+      user: userRest,
+      role: roleRest,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      requireRoleSelection: false as const,
+    };
   }
 
   async refreshToken(dto: RefreshTokenDto) {
@@ -117,13 +265,23 @@ export class AuthenticationService {
         await this.refreshTokenStorage.invalidate(sub);
       }
 
-      const user = await this.prisma.user.findUnique({
+      const exist = await this.prisma.user.findUnique({
         where: { id: sub },
+        include: {
+          roles: true,
+        },
       });
-      if (!user) {
+      if (!exist) {
         throw new UnauthorizedException('Invalid refresh token value');
       }
-      return await this.generateToken(user);
+
+      const { roles, ...user } = exist;
+      if (!roles.length) {
+        this.logger.error(`Refresh token user found but has no role included`);
+        throw new InternalServerErrorException();
+      }
+
+      return await this.generateJWTToken(user, roles[0]);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -136,14 +294,23 @@ export class AuthenticationService {
     }
   }
 
-  private async generateToken(user: User) {
+  private async generateJWTToken(user: User, role: Role) {
     const refreshTokenId = randomUUID();
 
     const [accessToken, refreshToken] = await Promise.all([
       this.signToken<Partial<ActiveUserPayload>>(
         user.id,
         this.jwtCfg.accessTokenTtl,
-        { email: user.email },
+        {
+          user: {
+            id: user.id,
+            email: user.email,
+          },
+          role: {
+            id: role.id,
+            code: role.code,
+          },
+        },
       ),
       this.signToken<Partial<RefreshTokenPayload>>(
         user.id,
@@ -155,6 +322,48 @@ export class AuthenticationService {
     ]);
     await this.refreshTokenStorage.insert(user.id, refreshTokenId);
     return { accessToken, refreshToken };
+  }
+
+  private async generateExchangeToken(ttlMs: number, user: User) {
+    const plaintext = randomBytes(32).toString('hex');
+    const expiry = new Date(Date.now() + ttlMs);
+    const hash = createHash('sha256').update(plaintext).digest('hex');
+
+    await this.prisma.verification.create({
+      data: {
+        value: hash,
+        expiredAt: expiry,
+        scope: 'SelectRole',
+        userId: user.id,
+      },
+    });
+
+    return {
+      token: plaintext,
+      expiredAt: expiry,
+    };
+  }
+
+  async verifyExchangeToken(token: string) {
+    const hash = createHash('sha256').update(token).digest('hex');
+    const verification = await this.prisma.verification.findUnique({
+      where: {
+        value: hash,
+        expiredAt: {
+          gt: new Date(), // not expired
+        },
+        scope: 'SelectRole',
+      },
+    });
+
+    if (!verification) {
+      return {
+        isValid: false,
+        userId: null,
+      } as const;
+    }
+
+    return { isValid: true, userId: verification.userId } as const;
   }
 
   private async signToken<T>(userId: string, expiresIn: number, payload?: T) {
