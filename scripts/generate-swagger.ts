@@ -53,14 +53,17 @@ async function generateSwaggerJson() {
   const document = SwaggerModule.createDocument(app, config);
 
   // Write to file
-  fs.writeFileSync('./swagger-spec.json', JSON.stringify(document, null, 2));
+  fs.writeFileSync(
+    './docs/swagger-spec.json',
+    JSON.stringify(document, null, 2),
+  );
 
   console.log('✅ Swagger JSON generated successfully at ./swagger-spec.json');
 
   // Also generate YAML if needed
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const yaml = require('js-yaml');
-  fs.writeFileSync('./swagger-spec.yaml', yaml.dump(document));
+  fs.writeFileSync('./docs/swagger-spec.yaml', yaml.dump(document));
 
   console.log('✅ Swagger YAML generated successfully at ./swagger-spec.yaml');
 
