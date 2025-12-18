@@ -8,10 +8,10 @@ async function generateSwaggerJson() {
   const app = await NestFactory.create(AppModule);
 
   const config = new DocumentBuilder()
-    .setTitle('IAM API Documentation')
+    .setTitle('Auth System Management API Documentation')
     .setDescription(
       `
-      Comprehensive Identity and Access Management (IAM) API with role-based access control (RBAC).
+      Comprehensive Auth system management API with role-based and claim-base access control (CBAC | RBAC).
       
       ## Features
       - User authentication with JWT tokens
@@ -22,16 +22,16 @@ async function generateSwaggerJson() {
       
       ## Authentication Flow
       1. Sign up with role codes
-      2. Sign in (if multiple roles, select one)
+      2. Sign in (if has multiple roles, select role first before access resources)
       3. Use access token in Bearer header
       4. Refresh tokens when expired
       
       ## Permission Types
       - **Route Permissions**: Control access to API endpoints
-      - **Resource Permissions**: Control access to UI resources/menus
+      - **Resource Permissions**: Control access to per data resources (eg, resources on menus)
     `,
     )
-    .setVersion('1.0')
+    .setVersion('1.0.0')
     .addBearerAuth(
       {
         type: 'http',

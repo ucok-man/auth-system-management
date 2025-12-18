@@ -25,7 +25,7 @@ async function bootstrap() {
 
   // Swagger Configuration
   const config = new DocumentBuilder()
-    .setTitle('IAM API Documentation')
+    .setTitle('Auth System Management API Documentation')
     .setDescription(
       `
       Comprehensive Auth system management API with role-based and claim-base access control (CBAC | RBAC).
