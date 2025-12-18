@@ -1,98 +1,308 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Auth System Management API | Technical Test PT Data Integrasi Inovasi
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A comprehensive authentication and authorization system built with NestJS, featuring role-based access control (RBAC) and claim-based access control (CBAC) with JWT token management.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Features
 
-## Description
+- **User Authentication**: Secure JWT-based authentication with access and refresh tokens
+- **Multi-Role Support**: Users can have multiple roles with dynamic role selection
+- **Permission System**: Fine-grained permission control with Route and Resource permissions
+- **Dynamic Menu System**: Menu visibility based on user resource permissions
+- **Token Refresh**: Automatic token refresh mechanism with Redis storage
+- **Exchange Token**: Secure role selection for multi-role users
+- **OpenAPI Documentation**: Interactive Swagger UI for API exploration
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Tech Stack
 
-## Project setup
+- **Framework**: NestJS (Node.js)
+- **Language**: TypeScript
+- **Database**: PostgreSQL 17 (with Prisma ORM)
+- **Cache**: Redis (for refresh token storage)
+- **Authentication**: JWT (JSON Web Tokens)
+- **Password Hashing**: Bcrypt
+- **Validation**: class-validator
+- **API Documentation**: Swagger/OpenAPI
 
-```bash
-$ pnpm install
-```
+## Database Schema
 
-## Compile and run the project
+The system uses database schema with the following entities:
 
-```bash
-# development
-$ pnpm run start
+![Database ERD](docs/erd-diagram.png)
 
-# watch mode
-$ pnpm run start:dev
+### Entity Relationships
 
-# production mode
-$ pnpm run start:prod
-```
+- **User ↔ Role**: Many-to-many relationship via `UserRole` junction table
+- **Role ↔ Permission**: Many-to-many relationship via `RolePermission` junction table
+- **User ↔ Verification**: One-to-many relationship for token verification
+- **Menu**: Self-referencing hierarchy with `parentId` for nested menus
+- **Menu Permissions**: Stored as array of permission codes (not relational)
 
-## Run tests
+### Permission Types
 
-```bash
-# unit tests
-$ pnpm run test
+1. **Route Permissions**: Control access to API endpoints (format: `<resource>:<action>`)
+2. **Resource Permissions**: Control access to data resources (format: `<rolecode>:<action>`)
 
-# e2e tests
-$ pnpm run test:e2e
+### Verification Scopes
 
-# test coverage
-$ pnpm run test:cov
-```
+- `SelectRole`: Used for exchange tokens when users have multiple roles
 
-## Deployment
+## Prerequisites
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- Node.js 18+ or higher
+- PostgreSQL 17
+- Redis 6+
+- npm or yarn package manager
+- Docker and Docker Compose
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Quick Start
+
+> Make sure your docker is running first
+
+### 1. Clone the Repository
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+git clone git@github.com:ucok-man/auth-system-management.git
+cd auth-system-management
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 2. Install Dependencies
 
-## Resources
+```bash
+npm install
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+### 3. Set Up Environment Variables
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Create a `.env` file in the root directory:
 
-## Support
+```bash
+cp .env.example .env
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Configure the following environment variables:
 
-## Stay in touch
+```env
+# Application
+PORT=3000
+NODE_ENV=development
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+# PostgreSQL Database
+POSTGRES_URL="postgresql://username:password@localhost:5432/auth_system?schema=public"
+POSTGRES_MAX_OPEN_CONN=25
+POSTGRES_MIN_IDLE_CONN=15
+POSTGRES_MAX_IDLE_TIME_SECOND=900
+POSTGRES_MAX_CONN_TIMEOUT_SECOND=3
 
-## License
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+# JWT Configuration
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+JWT_TOKEN_AUDIENCE=localhost:3000
+JWT_TOKEN_ISSUER=localhost:3000
+JWT_ACCESS_TOKEN_TTL=3600
+JWT_REFRESH_TOKEN_TTL=86400
+
+# CORS
+CORS_ORIGIN=http://localhost:3000,http://localhost:4200
+CORS_METHODS=GET,HEAD,PUT,PATCH,POST,DELETE
+CORS_CREDENTIALS=true
+```
+
+### 4. Start Database
+
+Make sure Docker is running:
+
+```bash
+# Using Docker Compose
+npm run db:up
+```
+
+### 4. Set Up Database
+
+Run Prisma migrations:
+
+```bash
+# Generate Prisma Client
+npm run prisma:generate
+
+# Run migrations
+npm run prisma:migrate:dev
+
+# Seed the database
+npm run prisma:seed
+
+# All dummy user can be see on prisma/seed.ts file.
+```
+
+### 6. Start the Application
+
+For development:
+
+```bash
+npm run start:dev
+```
+
+For production:
+
+```bash
+npm run build
+npm run start:prod
+```
+
+The API will be available at `http://localhost:3000` if using default port
+
+## API Documentation
+
+Once the application is running, visit:
+
+- **Swagger UI**: http://localhost:3000/api-docs
+
+## Available Endpoints
+
+### Authentication
+
+- `POST /auth/sign-up` - Register new user with roles
+- `POST /auth/sign-in` - Authenticate user (returns tokens or exchange token)
+- `POST /auth/select-role` - Select role for multi-role users
+- `POST /auth/refresh-tokens` - Refresh access token
+
+### Users
+
+- `GET /users` - Get all users (requires `user:read` permission)
+
+### Roles
+
+- `POST /roles` - Create new role (requires `role:create` permission)
+- `GET /roles` - Get all roles (requires `role:read` permission)
+- `POST /roles/assign` - Assign role to user (requires `role:edit` permission)
+
+### Permissions
+
+- `POST /permissions` - Create new permission (requires `permission:create` permission)
+- `GET /permissions` - Get all permissions (requires `permission:read` permission)
+- `POST /permissions/assign` - Assign permission to role (requires `permission:edit` permission)
+
+### Menus
+
+- `POST /menus` - Create new menu (requires `menu:create` permission)
+- `GET /menus/my-menus` - Get user's accessible menus (requires `menu:read` permission)
+
+## Authentication Flow
+
+### Single Role User
+
+```mermaid
+    Client->>API: POST /auth/sign-in
+```
+
+### Multi-Role User
+
+```mermaid
+    Client->>API: POST /auth/sign-in
+    Client->>API: POST /auth/select-role
+```
+
+## Permission System
+
+### Permission Code Format
+
+- **Route Permissions**: `<resource>:<action>` (e.g., `user:read`, `menu:create`)
+- **Resource Permissions**: `<rolecode>:<action>` (e.g., `admin:read`, `user:update`)
+
+### Supported Actions
+
+- `create` - Create new resources
+- `read` - View/read resources
+- `update` - Modify existing resources
+- `delete` - Delete resources
+
+### Example: Creating and Assigning Permissions
+
+```bash
+# 1. Create a permission
+POST /permissions
+{
+  "code": "user:read",
+  "name": "Read Users",
+  "description": "Allows viewing user data"
+}
+
+# 2. Assign permission to role
+POST /permissions/assign
+{
+  "permissionId": "permission-uuid",
+  "roleId": "role-uuid"
+}
+```
+
+## Security Considerations
+
+- **Password Storage**: All passwords are hashed using bcrypt with salt
+- **JWT Tokens**: Short-lived access tokens (1 hour) with refresh tokens (24 hours)
+- **Token Storage**: Refresh tokens stored in Redis with user-specific keys
+- **Exchange Tokens**: SHA-256 hashed verification tokens for role selection
+- **CORS**: Configurable CORS settings for production environments
+- **Input Validation**: All inputs validated using class-validator decorators
+
+## Environment Variables Reference
+
+| Variable                           | Description                            | Default                          | Required |
+| ---------------------------------- | -------------------------------------- | -------------------------------- | -------- |
+| `PORT`                             | Server port                            | `3000`                           | No       |
+| `NODE_ENV`                         | Environment                            | `development`                    | No       |
+| `POSTGRES_URL`                     | PostgreSQL connection string           | -                                | Yes      |
+| `POSTGRES_MAX_OPEN_CONN`           | Maximum open connections               | `25`                             | No       |
+| `POSTGRES_MIN_IDLE_CONN`           | Minimum idle connections               | `15`                             | No       |
+| `POSTGRES_MAX_IDLE_TIME_SECOND`    | Max idle time (seconds)                | `900`                            | No       |
+| `POSTGRES_MAX_CONN_TIMEOUT_SECOND` | Connection timeout (seconds)           | `3`                              | No       |
+| `REDIS_HOST`                       | Redis host                             | `localhost`                      | Yes      |
+| `REDIS_PORT`                       | Redis port                             | `6379`                           | No       |
+| `JWT_SECRET`                       | JWT secret key                         | -                                | Yes      |
+| `JWT_TOKEN_AUDIENCE`               | JWT audience                           | -                                | Yes      |
+| `JWT_TOKEN_ISSUER`                 | JWT issuer                             | -                                | Yes      |
+| `JWT_ACCESS_TOKEN_TTL`             | Access token TTL (seconds)             | `3600`                           | No       |
+| `JWT_REFRESH_TOKEN_TTL`            | Refresh token TTL (seconds)            | `86400`                          | No       |
+| `CORS_ORIGIN`                      | Allowed CORS origins (comma-separated) | `""`                             | No       |
+| `CORS_METHODS`                     | Allowed HTTP methods                   | `GET,HEAD,PUT,PATCH,POST,DELETE` | No       |
+| `CORS_CREDENTIALS`                 | Allow credentials                      | `true`                           | No       |
+
+## Troubleshooting
+
+### Common Issues
+
+**Database Connection Error**
+
+```
+Error: Can't reach database server
+```
+
+- Ensure PostgreSQL is running
+- Check connection string in `.env`
+- Verify database user permissions
+
+**Redis Connection Error**
+
+```
+Error: Redis connection refused
+```
+
+- Ensure Redis is running on the configured port
+- Check Redis host and port in `.env`
+
+**JWT Token Invalid**
+
+```
+401 Unauthorized: Invalid or missing access token
+```
+
+- Token may have expired, use refresh token endpoint
+- Verify JWT secret matches in `.env`
+
+## Acknowledgments
+
+- Built with [NestJS](https://nestjs.com/)
+- Database ORM by [Prisma](https://www.prisma.io/)
+- Authentication using [JWT](https://jwt.io/)
+- API documentation with [Swagger](https://swagger.io/)
