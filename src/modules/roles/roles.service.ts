@@ -23,7 +23,7 @@ export class RolesService {
 
       if (exist) {
         throw new BadRequestException([
-          `Role code with value '${dto.code}' already exists`,
+          `Code with value '${dto.code}' already exists`,
         ]);
       }
 

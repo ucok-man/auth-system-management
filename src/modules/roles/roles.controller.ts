@@ -26,7 +26,7 @@ export class RolesController {
 
   @RoutePermission(RoutePermissionCode.RoleEdit)
   @HttpCode(HttpStatus.OK)
-  @Post()
+  @Post('/assign')
   async assignRole(@Body() dto: AssignRoleDto) {
     const { allRoles, assignedRole, userId } =
       await this.rolesService.assignRole(dto);
